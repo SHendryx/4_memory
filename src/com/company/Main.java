@@ -106,20 +106,22 @@ public class Main {
             if (frameIndex == -1){
                 pageFaults++;
                 if (frames[j].getPageNum() == -1){
+                    // If there are empty frames, fill them up
                     System.out.println("Page " + queue[i].getPageNum() + " loaded into frame " + j);
                     frames[j].setPageNum(queue[i].getPageNum());
-                    frames[j].setLastTimeUsed(i);
+                    frames[j].setNextUseTime(queue[i].getNextUseTime());
                 } else{
-                    // Test for longest access time
-                    k = getLeastRecentlyUsed(frames);
+                    // Test for latest next used time
+                    k = getLatestNextUse(frames);
                     System.out.println("Page " + frames[k].getPageNum() + " unloaded from Frame " + k +", Page " + queue[i].getPageNum() + " loaded into Frame " + k);
                     frames[k].setPageNum(queue[i].getPageNum());
-                    frames[k].setLastTimeUsed(i);
+                    frames[k].setNextUseTime(queue[i].getNextUseTime());
                 }
                 j = (j + 1) % frames.length;
             } else{
+                // Page exists in Frame already. Just update next use time.
                 System.out.println("Page " + queue[i].getPageNum() + " already in frame " + frameIndex);
-                frames[frameIndex].setLastTimeUsed(i);
+                frames[frameIndex].setNextUseTime(queue[i].getNextUseTime());
             }
         }
         System.out.println(pageFaults + " page faults");
@@ -192,14 +194,32 @@ public class Main {
         return frameIndex;
     }
 
-    private void setNextUse(Page[] queue){
+    private static void setNextUse(Page[] queue){
         int temp;
         for (int i = 0; i < queue.length; i++){
             temp = queue[i].getPageNum();
 
-            for (int j = i; j < queue.length; j++){
-                
+            for (int j = i + 1; j < queue.length; j++){
+                if (queue[j].getPageNum() == temp){
+                    queue[i].setNextUseTime(j);
+                    break;
+                } else{
+                    queue[i].setNextUseTime(Integer.MAX_VALUE);
+                }
             }
         }
+        System.out.println(queue.toString());
+    }
+
+    private static int getLatestNextUse(Page[] frames){
+        int latestNextUse = 0;
+        int frameIndex = 0;
+        for (int i = 0; i < frames.length; i++){
+            if (frames[i].getNextUseTime() > latestNextUse){
+                latestNextUse = frames[i].getNextUseTime();
+                frameIndex = i;
+            }
+        }
+        return frameIndex;
     }
 }
