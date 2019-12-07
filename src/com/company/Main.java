@@ -1,7 +1,7 @@
 package com.company;
 
-
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Scanner;
 
@@ -49,25 +49,26 @@ public class Main {
 
             setNextUse(queue);
 
-            fifo(queue, frames);
-            cleanFrames(frames);
-            optimal(queue, frames);
-            cleanFrames(frames);
-            lru(queue, frames);
+            // Setup file writer
+            FileWriter writer = new FileWriter("./output.txt");
 
+            fifo(queue, frames, writer);
+            cleanFrames(frames);
+            writer.write("\n");
+            optimal(queue, frames, writer);
+            cleanFrames(frames);
+            writer.write("\n");
+            lru(queue, frames, writer);
+            writer.close();
         } catch (IOException e){
             e.printStackTrace();
+            System.exit(1);
         }
-        /*
-        System.out.println("Num Pages: " + numPages);
-        System.out.println("Num Frames: " + numFrames);
-        System.out.println("Num Requests: " + numRequests);
-        */
         System.exit(0);
     }
 
-    private static void fifo(Page[] queue, Page[] frames) {
-        System.out.println("FIFO");
+    private static void fifo(Page[] queue, Page[] frames, FileWriter writer) throws IOException{
+        writer.write("FIFO\n");
 
         // Process queue
         int j = 0;
@@ -79,21 +80,21 @@ public class Main {
             if (frameIndex == -1){
                 pageFaults++;
                 if (frames[j].getPageNum() != -1){
-                    System.out.println("Page " + frames[j].getPageNum() + " unloaded from Frame " + j +", Page " + queue[i].getPageNum() + " loaded into Frame " + j);
+                    writer.write("Page " + frames[j].getPageNum() + " unloaded from Frame " + j +", Page " + queue[i].getPageNum() + " loaded into Frame " + j +"\n");
                 } else{
-                    System.out.println("Page " + queue[i].getPageNum() + " loaded into frame " + j);
+                    writer.write("Page " + queue[i].getPageNum() + " loaded into frame " + j + "\n");
                 }
                 frames[j].setPageNum(queue[i].getPageNum());
                 j = (j + 1) % frames.length;
             } else{
-                System.out.println("Page " + queue[i].getPageNum() + " already in frame " + frameIndex);
+                writer.write("Page " + queue[i].getPageNum() + " already in frame " + frameIndex + "\n");
             }
         }
-        System.out.println(pageFaults + " page faults");
+        writer.write(pageFaults + " page faults\n");
     }
 
-    private static void optimal(Page[] queue, Page[] frames) {
-        System.out.println("Optimal");
+    private static void optimal(Page[] queue, Page[] frames, FileWriter writer) throws IOException{
+        writer.write("Optimal\n");
 
         // Process queue
         int j = 0;
@@ -107,28 +108,28 @@ public class Main {
                 pageFaults++;
                 if (frames[j].getPageNum() == -1){
                     // If there are empty frames, fill them up
-                    System.out.println("Page " + queue[i].getPageNum() + " loaded into frame " + j);
+                    writer.write("Page " + queue[i].getPageNum() + " loaded into frame " + j + "\n");
                     frames[j].setPageNum(queue[i].getPageNum());
                     frames[j].setNextUseTime(queue[i].getNextUseTime());
                 } else{
                     // Test for latest next used time
                     k = getLatestNextUse(frames);
-                    System.out.println("Page " + frames[k].getPageNum() + " unloaded from Frame " + k +", Page " + queue[i].getPageNum() + " loaded into Frame " + k);
+                    writer.write("Page " + frames[k].getPageNum() + " unloaded from Frame " + k +", Page " + queue[i].getPageNum() + " loaded into Frame " + k + "\n");
                     frames[k].setPageNum(queue[i].getPageNum());
                     frames[k].setNextUseTime(queue[i].getNextUseTime());
                 }
                 j = (j + 1) % frames.length;
             } else{
                 // Page exists in Frame already. Just update next use time.
-                System.out.println("Page " + queue[i].getPageNum() + " already in frame " + frameIndex);
+                writer.write("Page " + queue[i].getPageNum() + " already in frame " + frameIndex + "\n");
                 frames[frameIndex].setNextUseTime(queue[i].getNextUseTime());
             }
         }
-        System.out.println(pageFaults + " page faults");
+        writer.write(pageFaults + " page faults\n");
     }
 
-    private static void lru(Page[] queue, Page[] frames) {
-        System.out.println("LRU");
+    private static void lru(Page[] queue, Page[] frames, FileWriter writer) throws IOException{
+        writer.write("LRU\n");
 
         // Process queue
         int j = 0;
@@ -141,23 +142,23 @@ public class Main {
             if (frameIndex == -1){
                 pageFaults++;
                 if (frames[j].getPageNum() == -1){
-                    System.out.println("Page " + queue[i].getPageNum() + " loaded into frame " + j);
+                    writer.write("Page " + queue[i].getPageNum() + " loaded into frame " + j + "\n");
                     frames[j].setPageNum(queue[i].getPageNum());
                     frames[j].setLastTimeUsed(i);
                 } else{
                     // Test for longest access time
                     k = getLeastRecentlyUsed(frames);
-                    System.out.println("Page " + frames[k].getPageNum() + " unloaded from Frame " + k +", Page " + queue[i].getPageNum() + " loaded into Frame " + k);
+                    writer.write("Page " + frames[k].getPageNum() + " unloaded from Frame " + k +", Page " + queue[i].getPageNum() + " loaded into Frame " + k + "\n");
                     frames[k].setPageNum(queue[i].getPageNum());
                     frames[k].setLastTimeUsed(i);
                 }
                 j = (j + 1) % frames.length;
             } else{
-                System.out.println("Page " + queue[i].getPageNum() + " already in frame " + frameIndex);
+                writer.write("Page " + queue[i].getPageNum() + " already in frame " + frameIndex + "\n");
                 frames[frameIndex].setLastTimeUsed(i);
             }
         }
-        System.out.println(pageFaults + " page faults");
+        writer.write(pageFaults + " page faults\n");
     }
 
     private static void cleanFrames(Page[] frames){
@@ -208,7 +209,6 @@ public class Main {
                 }
             }
         }
-        System.out.println(queue.toString());
     }
 
     private static int getLatestNextUse(Page[] frames){
