@@ -35,8 +35,25 @@ public class Main {
             numFrames = scanner.nextInt();
             numRequests = scanner.nextInt();
 
-            fifo(scanner, numPages, numFrames, numRequests);
+            // Create an array (queue) of page requests <Page>
+            Page[] queue = new Page[numRequests];
+            for (int i = 0; i < numRequests; i++){
+                queue[i] = new Page(scanner.nextInt());
+            }
 
+            // Create an array of frames <Page>
+            Page[] frames = new Page[numFrames];
+            for (int i = 0; i < numFrames; i++){
+                frames[i] = new Page(-1);
+            }
+
+            setNextUse(queue);
+
+            fifo(queue, frames);
+            cleanFrames(frames);
+            optimal(queue, frames);
+            cleanFrames(frames);
+            lru(queue, frames);
 
         } catch (IOException e){
             e.printStackTrace();
@@ -49,34 +66,16 @@ public class Main {
         System.exit(0);
     }
 
-    public static void fifo(Scanner scanner, int numPages, int numFrames, int numRequests) {
+    private static void fifo(Page[] queue, Page[] frames) {
         System.out.println("FIFO");
 
-        // Create an array of page numbers <Page>
-        Page[] pages = new Page[numPages];
-        for (int i = 0; i < numPages; i++){
-            pages[i] = new Page(i);
-        }
-
-        // Create an array of frames <Page>
-        Page[] frames = new Page[numFrames];
-        for (int i = 0; i < numFrames; i++){
-            frames[i] = new Page(-1);
-        }
-
-        // Create an array (queue) of page requests <Page>
-        Page[] queue = new Page[numRequests];
-        for (int i = 0; i < numRequests; i++){
-            queue[i] = new Page(scanner.nextInt());
-        }
-
         // Process queue
         int j = 0;
         int frameIndex;
         int pageFaults = 0;
-        for (int i = 0; i < numRequests; i++){
+        for (int i = 0; i < queue.length; i++){
             // Test if the item in the queue is already in the frame (-1 = does not exist)
-            frameIndex = ifExist(queue[i], frames);
+            frameIndex = ifExist(queue[i].getPageNum(), frames);
             if (frameIndex == -1){
                 pageFaults++;
                 if (frames[j].getPageNum() != -1){
@@ -84,8 +83,8 @@ public class Main {
                 } else{
                     System.out.println("Page " + queue[i].getPageNum() + " loaded into frame " + j);
                 }
-                frames[j] = queue[i];
-                j = (j + 1) % numFrames;
+                frames[j].setPageNum(queue[i].getPageNum());
+                j = (j + 1) % frames.length;
             } else{
                 System.out.println("Page " + queue[i].getPageNum() + " already in frame " + frameIndex);
             }
@@ -93,56 +92,114 @@ public class Main {
         System.out.println(pageFaults + " page faults");
     }
 
-    public static void LRU(Scanner scanner, int numPages, int numFrames, int numRequests) {
+    private static void optimal(Page[] queue, Page[] frames) {
+        System.out.println("Optimal");
+
+        // Process queue
+        int j = 0;
+        int k = 0;
+        int frameIndex;
+        int pageFaults = 0;
+        for (int i = 0; i < queue.length; i++){
+            // Test if the item in the queue is already in the frame (-1 = does not exist)
+            frameIndex = ifExist(queue[i].getPageNum(), frames);
+            if (frameIndex == -1){
+                pageFaults++;
+                if (frames[j].getPageNum() == -1){
+                    System.out.println("Page " + queue[i].getPageNum() + " loaded into frame " + j);
+                    frames[j].setPageNum(queue[i].getPageNum());
+                    frames[j].setLastTimeUsed(i);
+                } else{
+                    // Test for longest access time
+                    k = getLeastRecentlyUsed(frames);
+                    System.out.println("Page " + frames[k].getPageNum() + " unloaded from Frame " + k +", Page " + queue[i].getPageNum() + " loaded into Frame " + k);
+                    frames[k].setPageNum(queue[i].getPageNum());
+                    frames[k].setLastTimeUsed(i);
+                }
+                j = (j + 1) % frames.length;
+            } else{
+                System.out.println("Page " + queue[i].getPageNum() + " already in frame " + frameIndex);
+                frames[frameIndex].setLastTimeUsed(i);
+            }
+        }
+        System.out.println(pageFaults + " page faults");
+    }
+
+    private static void lru(Page[] queue, Page[] frames) {
         System.out.println("LRU");
 
-        // Create an array of page numbers <Page>
-        Page[] pages = new Page[numPages];
-        for (int i = 0; i < numPages; i++){
-            pages[i] = new Page(i);
-        }
-
-        // Create an array of frames <Page>
-        Page[] frames = new Page[numFrames];
-        for (int i = 0; i < numFrames; i++){
-            frames[i] = new Page(-1);
-        }
-
-        // Create an array (queue) of page requests <Page>
-        Page[] queue = new Page[numRequests];
-        for (int i = 0; i < numRequests; i++){
-            queue[i] = new Page(scanner.nextInt());
-        }
-
         // Process queue
         int j = 0;
+        int k = 0;
         int frameIndex;
         int pageFaults = 0;
-        for (int i = 0; i < numRequests; i++){
+        for (int i = 0; i < queue.length; i++){
             // Test if the item in the queue is already in the frame (-1 = does not exist)
-            frameIndex = ifExist(queue[i], frames);
+            frameIndex = ifExist(queue[i].getPageNum(), frames);
             if (frameIndex == -1){
                 pageFaults++;
-                if (frames[j].getPageNum() != -1){
-                    System.out.println("Page " + frames[j].getPageNum() + " unloaded from Frame " + j +", Page " + queue[i].getPageNum() + " loaded into Frame " + j);
-                } else{
+                if (frames[j].getPageNum() == -1){
                     System.out.println("Page " + queue[i].getPageNum() + " loaded into frame " + j);
+                    frames[j].setPageNum(queue[i].getPageNum());
+                    frames[j].setLastTimeUsed(i);
+                } else{
+                    // Test for longest access time
+                    k = getLeastRecentlyUsed(frames);
+                    System.out.println("Page " + frames[k].getPageNum() + " unloaded from Frame " + k +", Page " + queue[i].getPageNum() + " loaded into Frame " + k);
+                    frames[k].setPageNum(queue[i].getPageNum());
+                    frames[k].setLastTimeUsed(i);
                 }
-                frames[j] = queue[i];
-                j = (j + 1) % numFrames;
+                j = (j + 1) % frames.length;
             } else{
                 System.out.println("Page " + queue[i].getPageNum() + " already in frame " + frameIndex);
+                frames[frameIndex].setLastTimeUsed(i);
             }
         }
         System.out.println(pageFaults + " page faults");
     }
 
-    private static int ifExist(Page page, Page[] frames){
+    private static void cleanFrames(Page[] frames){
+            for (int i = 0; i < frames.length; i++){
+                frames[i].setPageNum(-1);
+                frames[i].setNextUseTime(-1);
+                frames[i].setLastTimeUsed(-1);
+            }
+    }
+
+    private static int ifExist(int pageNum, Page[] frames){
         for (int i = 0; i < frames.length; i++){
-            if (frames[i].getPageNum() == page.getPageNum()){
+            if (frames[i].getPageNum() == pageNum){
                 return i;
             }
         }
         return -1;
+    }
+
+    private static int getLeastRecentlyUsed(Page[] frames){
+        int leastRecentlyUsed = 0;
+        int frameIndex = 0;
+        for (int i = 0; i < frames.length; i++){
+            if (leastRecentlyUsed == 0){
+                leastRecentlyUsed = frames[i].getLastTimeUsed();
+                frameIndex = i;
+            } else {
+                if (frames[i].getLastTimeUsed() < leastRecentlyUsed){
+                    leastRecentlyUsed = frames[i].getLastTimeUsed();
+                    frameIndex = i;
+                }
+            }
+        }
+        return frameIndex;
+    }
+
+    private void setNextUse(Page[] queue){
+        int temp;
+        for (int i = 0; i < queue.length; i++){
+            temp = queue[i].getPageNum();
+
+            for (int j = i; j < queue.length; j++){
+                
+            }
+        }
     }
 }

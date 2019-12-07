@@ -2,27 +2,27 @@ package com.company;
 
 public class Page {
     // Instance Variables
-    int pageNum;
-    int nextUseTime;
-    int lastTimeUsed;
+    private int pageNum;
+    private int nextUseTime;
+    private int lastTimeUsed;
 
     // Constructors
     public Page(){
         this.pageNum = -1;
-        this.nextUseTime = 0;
-        this.lastTimeUsed = 0;
+        this.nextUseTime = Integer.MAX_VALUE;
+        this.lastTimeUsed = -1;
     }
 
     public Page(int pageNum){
         this.pageNum = pageNum;
-        this.nextUseTime = 0;
-        this.lastTimeUsed = 0;
+        this.nextUseTime = Integer.MAX_VALUE;
+        this.lastTimeUsed = -1;
     }
 
     public Page(int pageNum, int nextUseTime){
         this.pageNum = pageNum;
         this.nextUseTime = nextUseTime;
-        this.lastTimeUsed = 0;
+        this.lastTimeUsed = -1;
     }
 
     // Getter functions
