@@ -1,3 +1,12 @@
+/*
+ * CSC139
+ * Fall 2019
+ * Fourth Assignment (Memory Management)
+ * Hendryx, Samuel
+ * Section # 02
+ * OSs tested on: Athena, Windows 10 (IntelliJ IDE)
+ */
+
 package com.company;
 
 public class Page {
